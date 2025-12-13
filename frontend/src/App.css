@@ -1,0 +1,107 @@
+/* พื้นหลังโทนคาเฟ่นุ่ม ๆ */
+/* ไม่ต้องตั้ง background ซ้ำ ปล่อยให้ index.css จัดการ */
+body {
+  font-family: "Kanit", sans-serif;
+}
+
+/* กล่องใหญ่ตรงกลาง */
+.home-container {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* ตรงกลางแนวดิ่ง */
+  align-items: center;     /* ตรงกลางแนวนอน */
+  text-align: center;
+}
+
+
+/* ชื่อเกม */
+.home-title {
+  font-size: 64px;
+  font-weight: 700;
+  color: #3c2a1e;
+  margin-bottom: 10px;
+  line-height: 1.2;
+}
+
+.home-title span {
+  font-family: "Itim", cursive; /* ฟอนต์โค้งมนสวยๆ */
+  font-size: 72px;
+}
+
+/* Subtitle */
+.home-subtitle {
+  font-size: 18px;
+  color: #6d5243;
+  margin-bottom: 35px;
+}
+
+/* ปุ่มเริ่มเกม */
+.home-btn {
+  padding: 14px 32px;
+  background: #b388eb;
+  color: white;
+  border: none;
+  border-radius: 14px;
+  font-size: 22px;
+  cursor: pointer;
+  transition: 0.2s;
+  font-family: "Itim", cursive;
+}
+
+.home-btn:hover {
+  background: #8b5adc;
+  transform: translateY(-3px);
+}
+
+/* เพิ่มแอนิเมชั่นนุ่ม ๆ */
+.fade-in {
+  animation: fadeIn 1s ease forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+/* ไอคอนอีโมลอย ๆ รอบหน้าแรก */
+.decor-icon {
+  position: fixed;
+  opacity: 0.7;
+  animation: float 4s ease-in-out infinite;
+}
+
+.decor-img {
+  width: 60px;   /* ปรับขนาดได้ */
+  height: auto;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+/* ตำแหน่งประจำ */
+.decor-top-left {
+  top: 60px;
+  left: 80px;
+}
+
+.decor-top-right {
+  top: 80px;
+  right: 120px;
+}
+
+.decor-bottom-left {
+  bottom: 80px;
+  left: 120px;
+}
+
+.decor-bottom-right {
+  bottom: 60px;
+  right: 80px;
+}
+
+/* แอนิเมชันลอยขึ้น–ลง */
+@keyframes float {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0); }
+}
+
