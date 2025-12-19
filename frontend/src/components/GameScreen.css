@@ -488,3 +488,27 @@ body {
   display: flex;
   justify-content: flex-end;
 }
+.recipe-hint-btn {
+  margin: 8px 0;
+  background: #fde68a;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.recipe-hint-btn:hover {
+  background: #facc15;
+}
+
+.recipe-hint-box {
+  background: #fff7ed;
+  border: 1px dashed #f59e0b;
+  padding: 10px 14px;
+  border-radius: 12px;
+  margin: 8px 0;
+  text-align: left;
+  font-size: 14px;
+}

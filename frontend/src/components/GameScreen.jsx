@@ -12,62 +12,74 @@ function GameScreen({ goBack }) {
   const [decorationScore, setDecorationScore] = useState(0);
   const [activeOrder, setActiveOrder] = useState(null);
 
-  // เรทติ้งร้าน
-  const [rating, setRating] = useState(5);
+  // ⭐ เรทติ้งร้าน (เริ่มจาก 0)
+  const [rating, setRating] = useState(0);
   const [ratingCount, setRatingCount] = useState(0);
+
+  // 🟣 ระบบวัน (Day System)
+  const [day, setDay] = useState(1);
+  const DAY_DURATION = 60; // 1 วัน = 60 วินาที
+  const [timeLeft, setTimeLeft] = useState(DAY_DURATION);
 
   // เมนู + สูตรกาแฟ
   const menu = [
-    { name: "เอสเปรสโซ่", price: 40, recipe: ["ช็อตเอสเปรสโซ่"] },
-    {
-      name: "ลาเต้",
-      price: 50,
-      recipe: ["ช็อตเอสเปรสโซ่", "นมสด", "ฟองนม"],
-    },
-    {
-      name: "มอคค่า",
-      price: 55,
-      recipe: ["ช็อตเอสเปรสโซ่", "นมสด", "ซอสช็อกโกแลต", "ฟองนม"],
-    },
-    {
-      name: "ชาเขียวเย็น",
-      price: 45,
-      recipe: ["ชาเขียว", "นมสด", "น้ำแข็ง"],
-    },
-    {
-      name: "เค้กช็อกโกแลต",
-      price: 60,
-      recipe: ["เค้กช็อกโกแลต"],
-    },
+    { name: "เอสเปรสโซ่", price: 40, recipe: ["ช็อตเอสเปรสโซ่"], unlockDay: 1 },
+    { name: "ลาเต้", price: 50, recipe: ["ช็อตเอสเปรสโซ่", "นมสด", "ฟองนม"], unlockDay: 2 },
+    { name: "ชาเขียวเย็น", price: 45, recipe: ["ชาเขียว", "นมสด", "น้ำแข็ง"], unlockDay: 3 },
+    { name: "มอคค่า", price: 55, recipe: ["ช็อตเอสเปรสโซ่", "นมสด", "ซอสช็อกโกแลต", "ฟองนม"], unlockDay: 4 },
+    { name: "เค้กช็อกโกแลต", price: 60, recipe: ["เค้กช็อกโกแลต"], unlockDay: 5 },
   ];
 
-  // ร้านขายของตกแต่ง (มี attract + type สำหรับบัฟ)
+  // ร้านขายของตกแต่ง
   const decorationShop = [
     { name: "โต๊ะกาแฟไม้", price: 80, attract: 1, type: "seat" },
     { name: "แจกันดอกไม้", price: 40, attract: 0.5, type: "beauty" },
     { name: "โคมไฟวินเทจ", price: 70, attract: 0.8, type: "bonus_money" },
   ];
 
-  // สุ่มลูกค้าเข้าร้าน (ร้านยิ่งสวย ลูกค้ายิ่งเข้าถี่)
+  // 🟣 ตัวจับเวลา (Day Timer)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          setDay((d) => d + 1);
+          return DAY_DURATION;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+    // eslint-disable-next-line
+  }, []);
+
+  // 🟣 สุ่มลูกค้าเข้าร้าน (วันสูงขึ้น = เข้าถี่ขึ้น)
   useEffect(() => {
     const baseDelay = 7000;
-    const speedBonus = Math.min(decorationScore * 500, 5000);
-    const delay = Math.max(2000, baseDelay - speedBonus);
+
+    const decoBonus = Math.min(decorationScore * 500, 5000);
+    const dayBonus = Math.min((day - 1) * 700, 4000);
+
+    const delay = Math.max(1800, baseDelay - decoBonus - dayBonus);
 
     const interval = setInterval(() => {
-      const randomOrder = menu[Math.floor(Math.random() * menu.length)];
+      const availableMenu = menu.filter((item) => day >= item.unlockDay);
+      const randomOrder =
+        availableMenu[Math.floor(Math.random() * availableMenu.length)];
+
       const newCustomer = {
         id: Date.now(),
         name: "ลูกค้า #" + (customers.length + 1),
         order: randomOrder,
       };
+
       setCustomers((prev) => [...prev, newCustomer]);
     }, delay);
 
     return () => clearInterval(interval);
-  }, [customers.length, decorationScore]);
+  }, [customers.length, decorationScore, day]); // ใช้โค้ดแบบเดิมของคุณได้เลย
 
-  // ผลลัพธ์ตอนเสิร์ฟ (สำเร็จ / ผิดสูตร / เรทติ้ง / เงิน / ข้อความลูกค้า)
+  // ผลลัพธ์ตอนเสิร์ฟ
   const handleServeResult = (result) => {
     if (!activeOrder) return;
 
@@ -75,17 +87,12 @@ function GameScreen({ goBack }) {
     const price = customer.order.price;
     const { success, quality } = result;
 
-    // เอาลูกค้าออกจากคิว
     setCustomers((prev) => prev.filter((c) => c.id !== customer.id));
 
-    // โบนัสจากของตกแต่งบางชิ้น
-    const hasBonusMoney = decorations.some(
-      (d) => d.type === "bonus_money"
-    );
+    const hasBonusMoney = decorations.some((d) => d.type === "bonus_money");
     const bonusMoney = hasBonusMoney ? 5 : 0;
 
     if (success) {
-      // เสิร์ฟถูกต้อง
       setMoney((prev) => prev + price + bonusMoney);
       setRating((prev) => Math.min(5, prev + 0.15));
       setRatingCount((prev) => prev + 1);
@@ -96,9 +103,7 @@ function GameScreen({ goBack }) {
         "ทำดีมาก วันนี้ฟินไปทั้งวันเลย 😄",
         "กำลังพอดีเลย ขอบคุณนะ!",
       ];
-
-      const text =
-        happyMessages[Math.floor(Math.random() * happyMessages.length)];
+      const text = happyMessages[Math.floor(Math.random() * happyMessages.length)];
 
       setDialogue({
         name: customer.name,
@@ -110,17 +115,16 @@ function GameScreen({ goBack }) {
         ],
       });
     } else {
-      // เสิร์ฟผิดสูตร
       const penaltyBase = Math.round(price * 0.5);
       const penalty = Math.max(10, penaltyBase);
       setMoney((prev) => Math.max(0, prev - penalty));
 
-      // ปรับเรทติ้ง (ผิดเยอะ = ลดเยอะ)
+      // ❗ แก้ตรงนี้: ลดได้ถึง 0 (ไม่เด้งเป็น 1)
       const drop = quality >= 0.5 ? 0.2 : 0.4;
-      setRating((prev) => Math.max(1, prev - drop));
+      setRating((prev) => Math.max(0, prev - drop));
       setRatingCount((prev) => prev + 1);
 
-      let mood = quality >= 0.5 ? "neutral" : "angry";
+      const mood = quality >= 0.5 ? "neutral" : "angry";
 
       const neutralMessages = [
         "รสชาติเหมือนจะใช่ แต่ยังไม่ค่อยลงตัวแฮะ…",
@@ -156,22 +160,16 @@ function GameScreen({ goBack }) {
       alert("เงินไม่พอซื้อของตกแต่งชิ้นนี้");
       return;
     }
-
     setMoney((prev) => prev - item.price);
     setDecorations((prev) => [...prev, item]);
     setDecorationScore((prev) => prev + (item.attract || 0));
   };
 
-  const handleDialogueChoice = (value) => {
-    // ตอนนี้ยังไม่ต้องทำอะไรเป็นพิเศษกับ value ก็ได้
-    // ถ้าอยากใช้ต่อ (เช่น ถ้าเลือก Hmph แล้วลดเรทติ้งเพิ่ม) ค่อยเพิ่ม logic ได้
-    setDialogue(null);
-  };
+  const handleDialogueChoice = () => setDialogue(null);
 
   return (
     <div className="game-root">
       <div className="game-wrapper">
-        {/* แถบด้านบน */}
         <header className="top-bar">
           <div className="top-left">
             <div className="avatar-circle">🧑‍🍳</div>
@@ -184,11 +182,17 @@ function GameScreen({ goBack }) {
           <div className="top-center">
             <span className="money-label">💰 เงินในร้าน</span>
             <span className="money-value">{money} บาท</span>
+
             <div style={{ fontSize: 13, color: "#555", marginTop: 2 }}>
               ✨ ความสวยงามร้าน: {decorationScore.toFixed(1)}
             </div>
+
             <div style={{ fontSize: 13, color: "#555", marginTop: 2 }}>
               ⭐ เรทติ้งร้าน: {rating.toFixed(1)} / 5.0 ({ratingCount} รีวิว)
+            </div>
+
+            <div style={{ fontSize: 13, color: "#222", marginTop: 4 }}>
+              📅 Day <b>{day}</b> | ⏱ เหลือเวลา <b>{timeLeft}</b> วินาที
             </div>
           </div>
 
@@ -197,52 +201,38 @@ function GameScreen({ goBack }) {
           </button>
         </header>
 
-        {/* เนื้อหาซ้าย / ขวา */}
         <main className="main-layout">
-          {/* พื้นที่ร้านฝั่งซ้าย */}
           <section className="play-area">
             <div className="play-header">
               <span>พื้นที่ร้านกาแฟ</span>
             </div>
             <div className="play-body">
               {customers.length === 0 ? (
-                <div className="play-empty">
-                  ยังไม่มีลูกค้า ร้านเงียบอยู่… ☕
-                </div>
+                <div className="play-empty">ยังไม่มีลูกค้า ร้านเงียบอยู่… ☕</div>
               ) : (
-                <div className="customer-preview">
-                  🧍‍♀️ มีลูกค้าอยู่หน้าร้าน {customers.length} คน
-                </div>
+                <div className="customer-preview">🧍‍♀️ มีลูกค้าอยู่หน้าร้าน {customers.length} คน</div>
               )}
             </div>
           </section>
 
-          {/* แผงควบคุมฝั่งขวา */}
           <section className="side-panel">
-            {/* กล่องลูกค้า */}
             <div className="panel">
               <div className="panel-header">
                 <span>🧍 ลูกค้าที่รอเสิร์ฟ</span>
               </div>
               <div className="panel-body">
                 {customers.length === 0 ? (
-                  <p className="hint-text">
-                    ระบบจะสุ่มลูกค้าเข้าร้านให้โดยอัตโนมัติ
-                  </p>
+                  <p className="hint-text">ระบบจะสุ่มลูกค้าเข้าร้านให้โดยอัตโนมัติ</p>
                 ) : (
                   customers.map((c) => (
                     <div className="customer-row" key={c.id}>
                       <div className="customer-info">
                         <div className="customer-name">{c.name}</div>
                         <div className="customer-order">
-                          สั่ง: <strong>{c.order.name}</strong> (
-                          {c.order.price} บาท)
+                          สั่ง: <strong>{c.order.name}</strong> ({c.order.price} บาท)
                         </div>
                       </div>
-                      <button
-                        className="primary-btn"
-                        onClick={() => setActiveOrder(c)}
-                      >
+                      <button className="primary-btn" onClick={() => setActiveOrder(c)}>
                         ทำกาแฟ
                       </button>
                     </div>
@@ -251,24 +241,24 @@ function GameScreen({ goBack }) {
               </div>
             </div>
 
-            {/* กล่องเมนู */}
             <div className="panel">
               <div className="panel-header">
                 <span>📜 เมนูเครื่องดื่ม/ขนม</span>
               </div>
               <div className="panel-body menu-list">
-                {menu.map((item, index) => (
-                  <div className="menu-row" key={index}>
-                    <div>
-                      {item.name}
-                      <div className="menu-price">{item.price} บาท</div>
+                {menu
+                  .filter((item) => day >= item.unlockDay)
+                  .map((item, index) => (
+                    <div className="menu-row" key={index}>
+                      <div>
+                        {item.name}
+                        <div className="menu-price">{item.price} บาท</div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             </div>
 
-            {/* กล่องร้านตกแต่ง */}
             <div className="panel">
               <div className="panel-header">
                 <span>🎨 ร้านขายของตกแต่ง</span>
@@ -280,10 +270,7 @@ function GameScreen({ goBack }) {
                       {item.name}
                       <div className="menu-price">{item.price} บาท</div>
                     </div>
-                    <button
-                      className="secondary-btn"
-                      onClick={() => buyDecoration(item)}
-                    >
+                    <button className="secondary-btn" onClick={() => buyDecoration(item)}>
                       ซื้อ
                     </button>
                   </div>
@@ -306,7 +293,6 @@ function GameScreen({ goBack }) {
           </section>
         </main>
 
-        {/* หน้า overlay ทำกาแฟ */}
         {activeOrder && (
           <CoffeeMaker
             order={activeOrder}
@@ -315,7 +301,6 @@ function GameScreen({ goBack }) {
           />
         )}
 
-        {/* กล่องข้อความลูกค้า */}
         {dialogue && (
           <CustomerDialogue
             dialogue={dialogue}
